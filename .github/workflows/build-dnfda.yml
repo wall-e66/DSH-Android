@@ -3,6 +3,8 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+permissions:
+  contents: write
 env:
   GH_TOKEN: ${{ github.token }}
 jobs:
@@ -49,7 +51,17 @@ jobs:
             -Pdsh.signing.storePassword="$KEYSTORE_PASSWORD" \
             -Pdsh.signing.keyAlias=dnfda \
             -Pdsh.signing.keyPassword="$KEYSTORE_PASSWORD"
+      - name: stage apk
+        run: cp app/build/outputs/apk/release/*.apk Dnfda-arm64.apk
       - uses: actions/upload-artifact@v4
         with:
           name: Dnfda-release
-          path: app/build/outputs/apk/release/*.apk
+          path: Dnfda-arm64.apk
+      - name: publish release
+        run: |
+          TAG=dnfda-latest
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" \
+            --title "Dnfda $(date -u +%Y-%m-%d)" \
+            --notes "Dnfda（DSH-Android 改名版）：显示名 Dnfda、启动时网络验证、正式签名（可直接覆盖升级）。arm64，Android 10+。" \
+            Dnfda-arm64.apk
