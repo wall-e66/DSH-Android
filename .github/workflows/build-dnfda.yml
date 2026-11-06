@@ -15,8 +15,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - uses: android-actions/setup-android@v3
-      - run: yes | sdkmanager --licenses > /dev/null || true
+      - name: Android SDK licenses
+        run: |
+          echo "sdk root: ${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager --list_installed | head -20 || true
       - run: bash native/prebuilt.sh fetch
       - run: bash js/build-engine.sh
       - name: rename to Dnfda
