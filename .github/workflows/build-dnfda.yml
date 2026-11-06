@@ -32,8 +32,21 @@ jobs:
         run: |
           cp ci/GateActivity.kt app/src/main/java/io/github/jackwener/dsh/GateActivity.kt
           node ci/patch-manifest.js
-      - run: chmod +x gradlew && ./gradlew :app:assembleDebug --no-daemon
+      - name: decode keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+      - name: build signed release
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease --no-daemon \
+            -Pdsh.signing.storeFile="$RUNNER_TEMP/release.jks" \
+            -Pdsh.signing.storePassword="$KEYSTORE_PASSWORD" \
+            -Pdsh.signing.keyAlias=dnfda \
+            -Pdsh.signing.keyPassword="$KEYSTORE_PASSWORD"
       - uses: actions/upload-artifact@v4
         with:
-          name: Dnfda-debug
-          path: app/build/outputs/apk/debug/*.apk
+          name: Dnfda-release
+          path: app/build/outputs/apk/release/*.apk
