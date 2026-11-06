@@ -19,7 +19,6 @@ jobs:
         run: |
           echo "sdk root: ${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
           yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager --list_installed | head -20 || true
       - run: bash native/prebuilt.sh fetch
       - run: bash js/build-engine.sh
       - name: rename to Dnfda
@@ -29,6 +28,10 @@ jobs:
           sed -i 's|问 DSH|问 Dnfda|; s|Ask DSH|Ask Dnfda|' $R/values/strings.xml $R/values-en/strings.xml
           sed -i 's|安装为 DSH 扩展|安装为 Dnfda 扩展|' $R/values/strings_extensions.xml
           sed -i 's|DSH 输入法|Dnfda 输入法|' $R/values/strings_reliability.xml
+      - name: add network gate
+        run: |
+          cp ci/GateActivity.kt app/src/main/java/io/github/jackwener/dsh/GateActivity.kt
+          node ci/patch-manifest.js
       - run: chmod +x gradlew && ./gradlew :app:assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
