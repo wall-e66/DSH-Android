@@ -1,0 +1,33 @@
+name: build-dnfda
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: android-actions/setup-android@v3
+      - run: yes | sdkmanager --licenses > /dev/null || true
+      - run: bash native/prebuilt.sh fetch
+      - run: bash js/build-engine.sh
+      - name: rename to Dnfda
+        run: |
+          R=app/src/main/res
+          sed -i 's|>DSH<|>Dnfda<|' $R/values/strings.xml $R/values-en/strings.xml
+          sed -i 's|问 DSH|问 Dnfda|; s|Ask DSH|Ask Dnfda|' $R/values/strings.xml $R/values-en/strings.xml
+          sed -i 's|安装为 DSH 扩展|安装为 Dnfda 扩展|' $R/values/strings_extensions.xml
+          sed -i 's|DSH 输入法|Dnfda 输入法|' $R/values/strings_reliability.xml
+      - run: chmod +x gradlew && ./gradlew :app:assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Dnfda-debug
+          path: app/build/outputs/apk/debug/*.apk
